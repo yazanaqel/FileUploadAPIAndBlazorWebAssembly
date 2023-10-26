@@ -1,8 +1,15 @@
+using FileUploadAPIAndBlazorWebAssembly.Server.Data;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Add services to the container.
+
+builder.Services.AddDbContextPool<DataContext>
+	(op => op.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

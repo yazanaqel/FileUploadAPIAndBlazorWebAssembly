@@ -2,7 +2,7 @@
 @using System.Net.Http.Headers;
 @using FileUploadAPIAndBlazorWebAssembly.Shared;
 @inject HttpClient Http
-
+@inject IJSRuntime JS
 
 <PageTitle>Upload Files</PageTitle>
 
@@ -14,14 +14,15 @@
 @if (filesNames.Count > 0)
 {
 	<ul>
-		@foreach (var filesName in filesNames)
+		@foreach (var fileName in filesNames)
 		{
 			<li>
-				File: @filesName
+				File: @fileName
 				<br>
 				<span>
-					Stored File Name: @GetStoredFileName(filesName);
+					Stored File Name: @GetStoredFileName(fileName);
 				</span>
+				<button @onclick="@(()=>Download(GetStoredFileName(fileName),fileName))">DownLoad</button>
 			</li>
 		}
 	</ul>
@@ -50,7 +51,7 @@
 			content.Add(content: fileContent, name: "\"files\"", fileName: file.Name);
 		}
 
-		var response = await Http.PostAsync("/api/Files", content);
+		var response = await Http.PostAsync("/api/Files/Upload", content);
 
 		var newUploadResults = await response.Content.ReadFromJsonAsync<List<UploadResult>>();
 
@@ -69,5 +70,21 @@
 
 		return "Not Found!";
 
+	}
+
+	private async Task Download(string storedFileName, string originalFileName)
+	{
+		var response = await Http.GetAsync($"/api/Files/{storedFileName}");
+
+		if (!response.IsSuccessStatusCode)
+		{
+			await JS.InvokeVoidAsync("alert", "File Not Found!");
+		}
+		else
+		{
+			var fileStream = response.Content.ReadAsStream();
+			using var streamRef = new DotNetStreamReference(stream: fileStream);
+			await JS.InvokeVoidAsync("downloadFileFromStream", originalFileName, streamRef);
+		}
 	}
 }
